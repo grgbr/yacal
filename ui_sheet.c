@@ -15,7 +15,7 @@ void ui_render_sheet(struct ui_sheet*          thiz,
 	struct ui_window* const win = &thiz->sht_win;
 	bool                    load = (index != thiz->sht_index);
 	bool                    resize;
-	int                     ln = UI_MARGIN;
+	int                     ln = 0;
 
 	resize = ui_window_geometry_changed(win, geometry);
 	ut_assert(load || resize);
@@ -35,6 +35,10 @@ void ui_render_sheet(struct ui_sheet*          thiz,
 
 		thiz->sht_cal = ui_todo_calendar(todo);
 
+		thiz->sht_loc = ui_todo_location(todo);
+
+		thiz->sht_desc = ui_todo_description(todo);
+
 		thiz->sht_index = index;
 	}
 
@@ -42,10 +46,12 @@ void ui_render_sheet(struct ui_sheet*          thiz,
 		ui_update_window_geometry(win, geometry);
 
 	werase(win->win_inst);
-	mvwprintw(win->win_inst, ln++, UI_MARGIN, "Title: %s", thiz->sht_tle);
-	mvwprintw(win->win_inst, ln++, UI_MARGIN, "Priority: %s", thiz->sht_prio);
-	mvwprintw(win->win_inst, ln++, UI_MARGIN, "Categories: %s", dstr_charp(&thiz->sht_cats));
-	mvwprintw(win->win_inst, ln, UI_MARGIN, "Calendar: %s", thiz->sht_cal);
+	mvwprintw(win->win_inst, ln++, 0, "Title: %s", thiz->sht_tle);
+	mvwprintw(win->win_inst, ln++, 0, "Priority: %s", thiz->sht_prio);
+	mvwprintw(win->win_inst, ln++, 0, "Categories: %s", dstr_charp(&thiz->sht_cats));
+	mvwprintw(win->win_inst, ln++, 0, "Calendar: %s", thiz->sht_cal);
+	mvwprintw(win->win_inst, ln, 0, "Location: %s", thiz->sht_loc);
+	mvwaddstr(win->win_inst, ln + 2, 0, thiz->sht_desc);
 }
 
 __nonull(1, 2)

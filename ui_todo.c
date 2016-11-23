@@ -142,3 +142,35 @@ void ui_todo_categories(struct todo* todo, struct dstr* categories)
 
 	dstr_trunc(categories, 0);
 }
+
+__leaf
+char const* ui_todo_location(struct todo const* todo)
+{
+	char const* loc = NULL;
+
+	if (!todo)
+		return ui_todo_error_str;
+
+	loc = todo_location(todo);
+	if (!loc)
+		/* Location is optional: return empty string if not found. */
+		return "";
+
+	return loc;
+}
+
+__leaf
+char const* ui_todo_description(struct todo const* todo)
+{
+	char const* desc = NULL;
+
+	if (!todo)
+		return ui_todo_error_str;
+
+	desc = todo_description(todo);
+	if (!desc)
+		/* Description is optional: return empty string if not found. */
+		return "";
+
+	return desc;
+}

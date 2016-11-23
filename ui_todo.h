@@ -20,4 +20,8 @@ extern void        ui_todo_percent(char*, unsigned int, unsigned int, size_t)
 
 extern void        ui_todo_categories(struct todo*, struct dstr*) __nonull(2);
 
+extern char const* ui_todo_location(struct todo const*) __leaf;
+
+extern char const* ui_todo_description(struct todo const*) __leaf;
+
 #endif
