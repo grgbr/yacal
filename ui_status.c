@@ -16,11 +16,6 @@ void ui_render_status(struct ui_status*         thiz,
 	struct ui_field* const  flds = thiz->stat_flds;
 	struct ui_window* const win = &thiz->stat_win;
 	bool                    load = (index != thiz->stat_index);
-	bool                    resize;
-
-	resize = ui_window_geometry_changed(win, geometry);
-	if (!(load || resize))
-		return;
 
 	if (load) {
 		struct todo* todo;
@@ -43,8 +38,7 @@ void ui_render_status(struct ui_status*         thiz,
 		thiz->stat_index = index;
 	}
 
-	if (resize)
-		ui_update_window_geometry(win, geometry);
+	ui_update_window_geometry(win, geometry);
 
 	ui_adjust_available_field_width(flds,
 	                                ui_window_width(win),

@@ -120,6 +120,23 @@ void ui_move_window_cursor(struct ui_window const* thiz, int y, int x)
 }
 
 static inline __nonull(1)
+void ui_erase_window(struct ui_window const* thiz)
+{
+	ui_assert_window(thiz);
+
+	werase(thiz->win_inst);
+}
+
+static inline
+void ui_print_window_string(struct ui_window const* thiz,
+                            char const*             string)
+{
+	ui_assert_window(thiz);
+
+	waddstr(thiz->win_inst, string);
+}
+
+static inline __nonull(1)
 void ui_show_window(struct ui_window const* thiz)
 {
 	ui_assert_window(thiz);

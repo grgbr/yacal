@@ -27,9 +27,11 @@ static void ycl_resize_layout(struct yacal* thiz)
 {
 	int h;
 	int w;
-	int sht = 10;
+	int sht;
 
 	getmaxyx(stdscr, h, w);
+
+	sht = (h * 4) / 10;
 
 	switch (thiz->ycl_state) {
 	case YACAL_DIGEST_STAT:
@@ -135,6 +137,7 @@ static int ycl_process(struct yacal* thiz)
 		case YACAL_DIGEST_STAT:
 			thiz->ycl_state = YACAL_FULL_STAT;
 			ycl_resize_layout(thiz);
+			ycl_render(thiz, thiz->ycl_curr_todo);
 			break;
 
 		case YACAL_FULL_STAT:
@@ -144,7 +147,6 @@ static int ycl_process(struct yacal* thiz)
 			ut_assert(0);
 		}
 
-		ycl_render(thiz, thiz->ycl_curr_todo);
 		break;
 
 	case 'q':

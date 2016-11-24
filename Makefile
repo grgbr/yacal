@@ -3,9 +3,9 @@ INCLUDES      := $(HOME)/local/include
 LIBS          := $(HOME)/local/lib
 common-cflags := -D_GNU_SOURCE \
                  -Wall -Wextra -Wstack-protector \
-                 -fstack-protector-all -D_FORTIFY_SOURCE=2
+                 -fstack-protector-all
 CFLAGS        := $(common-cflags) -O0 -g
-#CFLAGS        := $(common-cflags) -O2 -DNDEBUG
+#CFLAGS        := $(common-cflags) -D_FORTIFY_SOURCE=2 -O2 -DNDEBUG
 
 objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o todo.o \
         vdir.o vector.o dstr.o utils.o

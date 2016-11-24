@@ -4,6 +4,19 @@
 
 #define SHT_INIT_CAT_LEN (8U)
 
+static __nonull(1, 3, 4)
+void ui_render_sheet_field(struct ui_window const* window,
+                           int                     row,
+                           char const*             header,
+                           char const*             content)
+{
+	ui_move_window_cursor(window, row, 0);
+	ui_window_attron(window, A_BOLD);
+	ui_print_window_string(window, header);
+	ui_window_attroff(window, A_BOLD);
+	ui_print_window_string(window, content);
+}
+
 __nonull(1, 2)
 void ui_render_sheet(struct ui_sheet*          thiz,
                      struct ui_geometry const* geometry,
@@ -14,11 +27,7 @@ void ui_render_sheet(struct ui_sheet*          thiz,
 
 	struct ui_window* const win = &thiz->sht_win;
 	bool                    load = (index != thiz->sht_index);
-	bool                    resize;
 	int                     ln = 0;
-
-	resize = ui_window_geometry_changed(win, geometry);
-	ut_assert(load || resize);
 
 	if (load) {
 		struct todo* todo;
@@ -42,16 +51,18 @@ void ui_render_sheet(struct ui_sheet*          thiz,
 		thiz->sht_index = index;
 	}
 
-	if (resize)
-		ui_update_window_geometry(win, geometry);
+	ui_update_window_geometry(win, geometry);
 
-	werase(win->win_inst);
-	mvwprintw(win->win_inst, ln++, 0, "Title: %s", thiz->sht_tle);
-	mvwprintw(win->win_inst, ln++, 0, "Priority: %s", thiz->sht_prio);
-	mvwprintw(win->win_inst, ln++, 0, "Categories: %s", dstr_charp(&thiz->sht_cats));
-	mvwprintw(win->win_inst, ln++, 0, "Calendar: %s", thiz->sht_cal);
-	mvwprintw(win->win_inst, ln, 0, "Location: %s", thiz->sht_loc);
-	mvwaddstr(win->win_inst, ln + 2, 0, thiz->sht_desc);
+	ui_erase_window(win);
+
+	ui_render_sheet_field(win, ln++, "Title: ", thiz->sht_tle);
+	ui_render_sheet_field(win, ln++, "Priority: ", thiz->sht_prio);
+	ui_render_sheet_field(win, ln++, "Categories: ", dstr_charp(&thiz->sht_cats));
+	ui_render_sheet_field(win, ln++, "Calendar: ", thiz->sht_cal);
+	ui_render_sheet_field(win, ln, "Location: ", thiz->sht_loc);
+
+	ui_move_window_cursor(win, ln + 2, 0);
+	ui_print_window_string(win, thiz->sht_desc);
 }
 
 __nonull(1, 2)
