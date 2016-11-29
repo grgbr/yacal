@@ -69,9 +69,9 @@ void vect_fini(struct vector const* thiz)
 	free(thiz->vect_arr);
 }
 
-extern char* vect_push(struct vector*) __nonull(1);
-extern void  vect_pop(struct vector*) __nonull(1);
-extern void  vect_shrink(struct vector*) __nonull(1);
-extern int   vect_init(struct vector*, size_t) __nonull(1);
+extern char* vect_push(struct vector*) __nonull(1) __nothrow;
+extern void  vect_pop(struct vector*) __nonull(1) __nothrow;
+extern void  vect_shrink(struct vector*) __nonull(1) __nothrow;
+extern int   vect_init(struct vector*, size_t) __nonull(1) __nothrow __leaf;
 
 #endif
