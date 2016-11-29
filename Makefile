@@ -8,7 +8,7 @@ CFLAGS        := $(common-cflags) -O0 -g
 #CFLAGS        := $(common-cflags) -D_FORTIFY_SOURCE=2 -O2 -DNDEBUG
 
 objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o todo.o \
-        vdir.o vector.o dstr.o utils.o
+        vdir.o vector.o string.o utils.o
 
 yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \

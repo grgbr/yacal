@@ -2,7 +2,7 @@
 #define _UI_SHEET_H
 
 #include "ui.h"
-#include "dstr.h"
+#include "string.h"
 
 struct todo_repo;
 

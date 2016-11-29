@@ -1,7 +1,7 @@
 #ifndef _UI_STATUS_H
 #define _UI_STATUS_H
 
-#include "dstr.h"
+#include "string.h"
 #include "ui.h"
 #include "ui_todo.h"
 

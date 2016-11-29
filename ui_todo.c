@@ -1,5 +1,5 @@
+#include <string.h>
 #include "string.h"
-#include "dstr.h"
 #include "todo.h"
 #include "ui_todo.h"
 
