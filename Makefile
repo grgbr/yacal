@@ -14,10 +14,6 @@ yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
 		$(filter %.o,$^) -lical -licalss -lncurses
 
-test_pad: $(BUILDDIR)/test_pad.o
-	$(CC) -I$(INCLUDES) -L$(LIBS) -MD -g -o $@ \
-		$(filter %.o,$^) -lncurses
-
 $(BUILDDIR)/%.o: %.c Makefile | $(BUILDDIR)
 	$(CC) -I$(INCLUDES) -MD $(CFLAGS) -o $@ -c $<
 
