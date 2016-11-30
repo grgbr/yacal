@@ -9,7 +9,6 @@ static char const ui_todo_percent_fmt[] = "(%u%%)";
 static char const ui_todo_undef_percent[] = "(??%)";
 
 static char const ui_todo_error_str[] = "???";
-static char const ui_todo_undef_str[] = "und";
 
 __leaf
 char const* ui_todo_title(struct todo const* todo)
@@ -45,21 +44,23 @@ __nonull(2) __leaf
 void ui_todo_priority(struct todo const* todo, char* string, size_t size)
 {
 	ut_assert(string);
-	ut_assert(size >= sizeof(ui_todo_undef_str));
+	ut_assert(size >= sizeof(ui_todo_error_str));
 
-	if (todo) {
-		int prio;
+	int prio;
 
-		prio = todo_priority(todo);
-
-		if (prio >= 0 && prio < 1000) {
-			snprintf(string, size, ui_todo_prio_fmt, prio);
-
-			return;
-		}
+	if (!todo) {
+		memcpy(string, ui_todo_error_str, sizeof(ui_todo_error_str));
+		return;
 	}
 
-	memcpy(string, ui_todo_undef_str, sizeof(ui_todo_undef_str));
+	prio = todo_priority(todo);
+	if (prio >= 0 && prio < 1000) {
+		snprintf(string, size, ui_todo_prio_fmt, prio);
+
+		return;
+	}
+
+	string[0] = '\0';
 }
 
 __nonull(1) __nothrow __leaf
@@ -146,31 +147,19 @@ void ui_todo_categories(struct todo* todo, struct dstr* categories)
 __leaf
 char const* ui_todo_location(struct todo const* todo)
 {
-	char const* loc = NULL;
-
 	if (!todo)
 		return ui_todo_error_str;
 
-	loc = todo_location(todo);
-	if (!loc)
-		/* Location is optional: return empty string if not found. */
-		return "";
-
-	return loc;
+	/* Location is optional: return NULL if not found. */
+	return todo_location(todo);
 }
 
 __leaf
 char const* ui_todo_description(struct todo const* todo)
 {
-	char const* desc = NULL;
-
 	if (!todo)
 		return ui_todo_error_str;
 
-	desc = todo_description(todo);
-	if (!desc)
-		/* Description is optional: return empty string if not found. */
-		return "";
-
-	return desc;
+	/* Description is optional: return NULL if not found. */
+	return todo_description(todo);
 }

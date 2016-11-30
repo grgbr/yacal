@@ -7,7 +7,8 @@
 struct todo_repo;
 
 struct ui_sheet {
-	unsigned int       sht_index;
+	unsigned int       sht_top;
+	struct line_bundle sht_ln;
 	char const*        sht_tle;
 	char               sht_prio[UI_TODO_PRIO_LEN + 1];
 	struct dstr        sht_cats;
@@ -30,10 +31,15 @@ void ui_show_sheet(struct ui_sheet const* thiz)
 	ui_show_window(&thiz->sht_win);
 }
 
-extern void ui_render_sheet(struct ui_sheet*,
-                             struct ui_geometry const*,
-                             unsigned int) __nonull(1, 2);
-extern int  ui_init_sheet(struct ui_sheet*, struct todo_repo*) __nonull(1, 2);
-extern void ui_fini_sheet(struct ui_sheet const*) __nonull(1);
+extern int  ui_scroll_sheet_down(struct ui_sheet*);
+extern int  ui_scroll_sheet_up(struct ui_sheet*);
+extern int  ui_render_sheet(struct ui_sheet*, struct ui_geometry const*)
+            __nonull(1, 2);
+extern void ui_load_sheet(struct ui_sheet*, unsigned int)
+            __nonull(1);
+extern int  ui_init_sheet(struct ui_sheet*, struct todo_repo*)
+            __nonull(1, 2);
+extern void ui_fini_sheet(struct ui_sheet const*)
+            __nonull(1);
 
 #endif

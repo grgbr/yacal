@@ -70,15 +70,53 @@ static void ycl_resize_layout(struct yacal* thiz)
 	}
 }
 
-static void ycl_render(struct yacal* thiz, unsigned int index)
+static void ycl_resize(struct yacal* thiz)
+{
+	ycl_resize_layout(thiz);
+
+	ui_render_digest(&thiz->ycl_dgst,
+	                 &thiz->ycl_dgst_geom,
+	                 thiz->ycl_curr_todo);
+
+	ui_render_status(&thiz->ycl_stat,
+	                 &thiz->ycl_stat_geom,
+	                 thiz->ycl_curr_todo);
+
+	if (thiz->ycl_state == YACAL_FULL_STAT)
+		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
+}
+
+static void ycl_select_todo(struct yacal* thiz, unsigned int index)
 {
 	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, index);
 	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom, index);
 
-	if (thiz->ycl_state == YACAL_FULL_STAT)
-		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom, index);
+	if (thiz->ycl_state == YACAL_FULL_STAT) {
+		ui_load_sheet(&thiz->ycl_sht, index);
+		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
+	}
 
 	thiz->ycl_curr_todo = index;
+}
+
+static void ycl_select_next_todo(struct yacal* thiz)
+{
+	unsigned int const idx = thiz->ycl_curr_todo + 1;
+
+	if (idx >= todo_repo_count(&thiz->ycl_todos))
+		return;
+
+	ycl_select_todo(thiz, idx);
+}
+
+static void ycl_select_previous_todo(struct yacal* thiz)
+{
+	unsigned int const idx = thiz->ycl_curr_todo;
+
+	if (!idx)
+		return;
+
+	ycl_select_todo(thiz, idx - 1);
 }
 
 static void ycl_show(struct yacal const* thiz)
@@ -93,32 +131,11 @@ static void ycl_show(struct yacal const* thiz)
 		ui_show_sheet(&thiz->ycl_sht);
 }
 
-static void ycl_select_next_todo(struct yacal* thiz)
-{
-	unsigned int const idx = thiz->ycl_curr_todo + 1;
-
-	if (idx >= todo_repo_count(&thiz->ycl_todos))
-		return;
-
-	ycl_render(thiz, idx);
-}
-
-static void ycl_select_previous_todo(struct yacal* thiz)
-{
-	unsigned int const idx = thiz->ycl_curr_todo;
-
-	if (!idx)
-		return;
-
-	ycl_render(thiz, idx - 1);
-}
-
 static int ycl_process(struct yacal* thiz)
 {
 	switch (getch()) {
 	case KEY_RESIZE:
-		ycl_resize_layout(thiz);
-		ycl_render(thiz, thiz->ycl_curr_todo);
+		ycl_resize(thiz);
 		break;
 
 	case KEY_DOWN:
@@ -136,16 +153,23 @@ static int ycl_process(struct yacal* thiz)
 		switch (thiz->ycl_state) {
 		case YACAL_DIGEST_STAT:
 			thiz->ycl_state = YACAL_FULL_STAT;
-			ycl_resize_layout(thiz);
-			ycl_render(thiz, thiz->ycl_curr_todo);
+			ui_load_sheet(&thiz->ycl_sht, thiz->ycl_curr_todo);
+			ycl_resize(thiz);
 			break;
 
 		case YACAL_FULL_STAT:
+			ui_scroll_sheet_down(&thiz->ycl_sht);
 			break;
 
 		default:
 			ut_assert(0);
 		}
+
+		break;
+
+	case KEY_BACKSPACE:
+		if (thiz->ycl_state == YACAL_FULL_STAT)
+			ui_scroll_sheet_up(&thiz->ycl_sht);
 
 		break;
 
@@ -156,14 +180,13 @@ static int ycl_process(struct yacal* thiz)
 
 		case YACAL_FULL_STAT:
 			thiz->ycl_state = YACAL_DIGEST_STAT;
-			ycl_resize_layout(thiz);
+			ycl_resize(thiz);
 			break;
 
 		default:
 			ut_assert(0);
 		}
 
-		ycl_render(thiz, thiz->ycl_curr_todo);
 		break;
 
 	default:
@@ -173,6 +196,7 @@ static int ycl_process(struct yacal* thiz)
 	ycl_show(thiz);
 	return 0;
 }
+
 
 static
 int ycl_init(struct yacal* thiz)
@@ -216,7 +240,10 @@ int ycl_init(struct yacal* thiz)
 	ui_load_digest(&thiz->ycl_dgst);
 	ui_load_status(&thiz->ycl_stat);
 
-	ycl_render(thiz, 0);
+	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, 0);
+	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom, 0);
+
+	thiz->ycl_curr_todo = 0;
 
 	ycl_show(thiz);
 

@@ -129,11 +129,12 @@ void ui_erase_window(struct ui_window const* thiz)
 
 static inline
 void ui_print_window_string(struct ui_window const* thiz,
-                            char const*             string)
+                            char const*             string,
+                            size_t                  size)
 {
 	ui_assert_window(thiz);
 
-	waddstr(thiz->win_inst, string);
+	waddnstr(thiz->win_inst, string, (int)size);
 }
 
 static inline __nonull(1)
