@@ -1,7 +1,7 @@
 BUILDDIR      := $(abspath build)
 INCLUDES      := $(HOME)/local/include
 LIBS          := $(HOME)/local/lib
-common-cflags := -D_GNU_SOURCE \
+common-cflags := -std=gnu99 -D_GNU_SOURCE \
                  -Wall -Wextra -Wstack-protector \
                  -fstack-protector-all
 CFLAGS        := $(common-cflags) -O0 -g
@@ -10,9 +10,15 @@ CFLAGS        := $(common-cflags) -O0 -g
 objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o todo.o \
         vdir.o vector.o string.o utils.o
 
+all: yacal uc_string
+
 yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
 		$(filter %.o,$^) -lical -licalss -lncurses
+
+uc_string: $(addprefix $(BUILDDIR)/, uc_string.o string.o vector.o)
+	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
+		$(filter %.o,$^) -lcheck -lpthread -lrt -lm
 
 $(BUILDDIR)/%.o: %.c Makefile | $(BUILDDIR)
 	$(CC) -I$(INCLUDES) -MD $(CFLAGS) -o $@ -c $<
@@ -23,7 +29,7 @@ clean:
 
 .PHONY: clobber
 clobber:
-	$(RM) -r yacal $(BUILDDIR)
+	$(RM) -r yacal uc_string $(BUILDDIR)
 
 .PHONY: dev
 dev: .vimrc | $(BUILDDIR)

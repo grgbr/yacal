@@ -5,6 +5,29 @@
 #include "utils.h"
 
 /******************************************************************************
+ * C string utils
+ ******************************************************************************/
+
+extern size_t str_count_leading_blank(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_trailing_blank(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_leading_noblank(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_leading_alnum(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_trailing_alnum(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_leading_noalnum(char const*, size_t)
+              __nonull(1) __nothrow __leaf __pure;
+extern size_t str_count_blank_dups(char const*, size_t)
+              __nonull(1) __nothrow __pure;
+extern size_t str_eval_squeeze_blanks(char const*, size_t, size_t*)
+              __nonull(1, 3) __nothrow __pure;
+extern size_t str_squeeze_blanks(char* restrict, char const* restrict, size_t)
+              __nonull(1, 2) __nothrow;
+
+/******************************************************************************
  * Dynamically resizeable string
  ******************************************************************************/
 
