@@ -11,6 +11,7 @@
 #define __pure           __attribute__((pure))
 #define __const          __attribute__((const))
 #define __printf(...)    __attribute__((format(printf, __VA_ARGS__)))
+#define __unused         __attribute__((unused))
 
 #define ut_assert(_cond) assert(_cond)
 
