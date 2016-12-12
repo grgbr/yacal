@@ -7,16 +7,20 @@ common-cflags := -std=gnu99 -D_GNU_SOURCE \
 CFLAGS        := $(common-cflags) -O0 -g
 #CFLAGS        := $(common-cflags) -D_FORTIFY_SOURCE=2 -O2 -DNDEBUG
 
-objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o todo.o \
-        vdir.o vector.o string.o utils.o
+objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o pager.o \
+	todo.o vdir.o vector.o string.o utils.o
 
-all: yacal uc_string
+all: yacal uc_string uc_pager
 
 yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
 		$(filter %.o,$^) -lical -licalss -lncurses
 
 uc_string: $(addprefix $(BUILDDIR)/, uc_string.o string.o vector.o)
+	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
+		$(filter %.o,$^) -lcheck -lpthread -lrt -lm
+
+uc_pager: $(addprefix $(BUILDDIR)/, uc_pager.o pager.o string.o vector.o)
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
 		$(filter %.o,$^) -lcheck -lpthread -lrt -lm
 
@@ -29,7 +33,7 @@ clean:
 
 .PHONY: clobber
 clobber:
-	$(RM) -r yacal uc_string $(BUILDDIR)
+	$(RM) -r yacal uc_string uc_pager $(BUILDDIR)
 
 .PHONY: dev
 dev: .vimrc | $(BUILDDIR)
