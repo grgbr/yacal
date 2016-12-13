@@ -3,12 +3,13 @@
 
 #include "ui.h"
 #include "string.h"
+#include "pager.h"
 
 struct todo_repo;
 
 struct ui_sheet {
 	unsigned int       sht_top;
-	struct line_bundle sht_ln;
+	struct pager       sht_pg;
 	char const*        sht_tle;
 	char               sht_prio[UI_TODO_PRIO_LEN + 1];
 	struct dstr        sht_cats;
@@ -39,7 +40,7 @@ extern void ui_load_sheet(struct ui_sheet*, unsigned int)
             __nonull(1);
 extern int  ui_init_sheet(struct ui_sheet*, struct todo_repo*)
             __nonull(1, 2);
-extern void ui_fini_sheet(struct ui_sheet const*)
+extern void ui_fini_sheet(struct ui_sheet*)
             __nonull(1);
 
 #endif

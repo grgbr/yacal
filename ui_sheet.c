@@ -11,60 +11,51 @@
 
 #define SHT_INIT_CAT_LEN (8U)
 
-static __nonull(1, 4)
-int ui_paint_sheet(struct ui_window const*   window,
-                   unsigned int              top,
-                   unsigned int const        row_nr,
-                   struct line_bundle const* lines)
+static
+int ui_render_sheet_line(char const*  string __unused,
+                         size_t       length,
+                         unsigned int line_no,
+                         unsigned int indent,
+                         void*        data)
 {
-	ut_assert(window);
-	ut_assert(row_nr);
-	ut_assert(lines);
+	if (length)
+		ui_move_window_cursor((struct ui_window*)data, line_no, indent);
 
-	unsigned int a;
-	unsigned int cnt;
-	unsigned int row;
-	size_t       sz;
+	return 0;
+}
 
-	for (a = 0, cnt = lbndl_atom_count(lines), row = 0;
-	     (a < cnt) && (row < top);
-	     a++)
-		if (!lbndl_atom(lines, a, &sz))
-			row++;
+static
+int ui_render_sheet_field(char const* string, size_t length, void* data)
+{
+	struct ui_window const* const win = (struct ui_window*)data;
 
-	ui_erase_window(window);
+	ui_window_attron(win, A_BOLD);
+	ui_print_window_string(win, string, length);
+	ui_window_attroff(win, A_BOLD);
 
-	for (row = 0; a < cnt; a++) {
-		char const* ln;
+	return 0;
+}
 
-		ln = lbndl_atom(lines, a, &sz);
-		if (ln) {
-			ui_print_window_string(window, ln, sz);
-			continue;
-		}
-
-		if (++row >= row_nr)
-			break;
-
-		ui_move_window_cursor(window, row, 0);
-	}
+static
+int ui_render_sheet_value(char const* string, size_t length, void* data)
+{
+	ui_print_window_string((struct ui_window*)data, string, length);
 
 	return 0;
 }
 
 int ui_scroll_sheet_up(struct ui_sheet* thiz)
 {
-	unsigned int const            top = thiz->sht_top;
-	struct ui_window const* const win = &thiz->sht_win;
-	int                           err;
+	unsigned int const      top = thiz->sht_top;
+	struct ui_window* const win = &thiz->sht_win;
+	int                     err;
 
 	if (!top)
 		return 0;
 
-	err = ui_paint_sheet(win,
-	                     top - 1,
-	                     ui_window_height(win),
-	                     &thiz->sht_ln);
+	ui_erase_window(win);
+
+	err = pg_paint(&thiz->sht_pg, top - 1, ui_window_height(win), win);
 	if (err)
 		return err;
 
@@ -76,20 +67,18 @@ int ui_scroll_sheet_up(struct ui_sheet* thiz)
 
 int ui_scroll_sheet_down(struct ui_sheet* thiz)
 {
-	struct ui_window* const   win = &thiz->sht_win;
-	struct line_bundle* const ln = &thiz->sht_ln;
-	unsigned int const        top = thiz->sht_top;
-	unsigned int              row_nr;
-	unsigned int              ln_nr;
-	int                       err;
+	struct ui_window* const win = &thiz->sht_win;
+	unsigned int const      top = thiz->sht_top;
+	struct pager* const     pg = &thiz->sht_pg;
+	unsigned int            height = ui_window_height(win);
+	int                     err;
 	
-	row_nr = ui_window_height(win);
-	ln_nr = lbndl_line_count(ln);
-
-	if ((top + ut_min(row_nr, ln_nr - top)) == ln_nr)
+	if ((top + height) >= pg_line_count(pg))
 		return 0;
 
-	err = ui_paint_sheet(win, top + 1, row_nr, ln);
+	ui_erase_window(win);
+
+	err = pg_paint(pg, top + 1, height, win);
 	if (err)
 		return err;
 
@@ -98,88 +87,112 @@ int ui_scroll_sheet_down(struct ui_sheet* thiz)
 	return 0;
 }
 
-__nonull(1, 2)
-int ui_render_sheet(struct ui_sheet* thiz, struct ui_geometry const* geometry)
+static
+int ui_render_sheet_pager(struct ui_sheet* thiz,
+                          struct pager*    pager,
+                          size_t           width)
 {
-	struct ui_window* const win = &thiz->sht_win;
-	unsigned int            cols;
-	struct line_bundle*     ln = &thiz->sht_ln;
-	int                     err;
+	int err;
 
-	ui_update_window_geometry(win, geometry);
+	if (pg_dress(pager, width, ui_render_sheet_line))
+		return 0;
 
-	cols = ui_window_width(win);
-
-	lbndl_clear(ln);
-
-	err = lbndl_push_string(ln, "Title: ", cols);
+	err = pg_feed_string(pager, "Title: ", ui_render_sheet_field);
 	if (err)
 		return err;
-	err = lbndl_push_string(ln, thiz->sht_tle, cols);
+	err = pg_feed_string(pager, thiz->sht_tle, ui_render_sheet_value);
 	if (err)
 		return err;
 
 	if (thiz->sht_prio[0] != '\0') {
-		err = lbndl_push_newline(ln);
+		err = pg_feed_line(pager, 0);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, "Priority: ", cols);
+		err = pg_feed_string(pager,
+		                     "Priority: ",
+		                     ui_render_sheet_field);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, thiz->sht_prio, cols);
+		err = pg_feed_string(pager,
+		                     thiz->sht_prio,
+		                     ui_render_sheet_value);
 		if (err)
 			return err;
 	}
 
 	if (dstr_len(&thiz->sht_cats)) {
-		err = lbndl_push_newline(ln);
+		err = pg_feed_line(pager, 0);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, "Categories: ", cols);
+		err = pg_feed_string(pager,
+		                     "Categories: ",
+		                     ui_render_sheet_field);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, dstr_charp(&thiz->sht_cats), cols);
+		err = pg_feed_string(pager,
+		                     dstr_charp(&thiz->sht_cats),
+		                     ui_render_sheet_value);
 		if (err)
 			return err;
 	}
 
-	err = lbndl_push_newline(ln);
+	err = pg_feed_line(pager, 0);
 	if (err)
 		return err;
-	err = lbndl_push_string(ln, "Calendar: ", cols);
+	err = pg_feed_string(pager, "Calendar: ", ui_render_sheet_field);
 	if (err)
 		return err;
-	err = lbndl_push_string(ln, thiz->sht_cal, cols);
+	err = pg_feed_string(pager, thiz->sht_cal, ui_render_sheet_value);
 	if (err)
 		return err;
 
 	if (thiz->sht_loc) {
-		err = lbndl_push_newline(ln);
+		err = pg_feed_line(pager, 0);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, "Location: ", cols);
+		err = pg_feed_string(pager,
+		                     "Location: ",
+		                     ui_render_sheet_field);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, thiz->sht_loc, cols);
+		err = pg_feed_string(pager, thiz->sht_loc, ui_render_sheet_value);
 		if (err)
 			return err;
 	}
 
 	if (thiz->sht_desc) {
-		err = lbndl_push_newline(ln);
+		err = pg_feed_line(pager, 0);
 		if (err)
 			return err;
-		err = lbndl_push_newline(ln);
+		err = pg_feed_line(pager, 0);
 		if (err)
 			return err;
-		err = lbndl_push_string(ln, thiz->sht_desc, cols);
+		err = pg_feed_string(pager,
+		                     thiz->sht_desc,
+		                     ui_render_sheet_value);
 		if (err)
 			return err;
 	}
 
-	ui_paint_sheet(win, thiz->sht_top, geometry->h, ln);
-
 	return 0;
+}
+
+__nonull(1, 2)
+int ui_render_sheet(struct ui_sheet* thiz, struct ui_geometry const* geometry)
+{
+	struct ui_window* const win = &thiz->sht_win;
+	struct pager* const     pg = &thiz->sht_pg;
+	int                     err;
+
+	ui_update_window_geometry(win, geometry);
+
+	err = ui_render_sheet_pager(thiz, pg, ui_window_width(win));
+	if (err)
+		return err;
+
+	ui_erase_window(win);
+
+	return pg_paint(pg, thiz->sht_top, geometry->h, win);
 }
 
 __nonull(1)
@@ -208,6 +221,8 @@ void ui_load_sheet(struct ui_sheet* thiz,
 	thiz->sht_loc = ui_todo_location(todo);
 
 	thiz->sht_desc = ui_todo_description(todo);
+
+	pg_clear(&thiz->sht_pg);
 }
 
 __nonull(1, 2)
@@ -219,7 +234,7 @@ int ui_init_sheet(struct ui_sheet*  thiz,
 
 	int err;
 
-	err = lbndl_init(&thiz->sht_ln);
+	err = pg_init(&thiz->sht_pg);
 	if (err)
 		return err;
 
@@ -240,17 +255,17 @@ int ui_init_sheet(struct ui_sheet*  thiz,
 cats:
 	dstr_fini(&thiz->sht_cats);
 lines:
-	lbndl_fini(&thiz->sht_ln);
+	pg_fini(&thiz->sht_pg);
 
 	return err;
 }
 
 __nonull(1)
-void ui_fini_sheet(struct ui_sheet const* thiz)
+void ui_fini_sheet(struct ui_sheet* thiz)
 {
 	ui_assert_sheet(thiz);
 
 	ui_fini_window(&thiz->sht_win);
 	dstr_fini(&thiz->sht_cats);
-	lbndl_fini(&thiz->sht_ln);
+	pg_fini(&thiz->sht_pg);
 }
