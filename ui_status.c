@@ -5,38 +5,30 @@
 #define STAT_MIN_CAL_LEN (6U)
 #define STAT_MIN_CAT_LEN (6U)
 
+static __nonull(1, 2, 3)
+void ui_paint_status(struct ui_status const* thiz,
+                     struct ui_field const*  fields,
+                     struct ui_window const* window)
+{
+	/* Move cursor to begining of status bar. */
+	ui_move_window_cursor(window, 0, 0);
+
+	ui_render_string_field(&fields[STAT_CAL_FLD], window, thiz->stat_cal);
+	ui_render_string_field(&fields[STAT_CAT_FLD],
+	                       window,
+	                       dstr_charp(&thiz->stat_cat));
+	ui_render_string_field(&fields[STAT_PRIO_FLD], window, thiz->stat_prio);
+	ui_render_string_field(&fields[STAT_CNT_FLD], window, thiz->stat_cnt);
+}
+
 __nonull(1, 2)
 void ui_render_status(struct ui_status*         thiz,
-                      struct ui_geometry const* geometry,
-                      unsigned int              index)
+                      struct ui_geometry const* geometry)
 {
 	ui_assert_status(thiz);
-	ut_assert(index < todo_repo_count(thiz->stat_todos));
 
-	struct ui_field* const  flds = thiz->stat_flds;
-	struct ui_window* const win = &thiz->stat_win;
-	bool                    load = (index != thiz->stat_index);
-
-	if (load) {
-		struct todo* todo;
-
-		todo = todo_repo_entry(thiz->stat_todos, index);
-
-		thiz->stat_cal = ui_todo_calendar(todo);
-
-		ui_todo_categories(todo, &thiz->stat_cat);
-
-		ui_todo_priority(todo,
-		                 thiz->stat_prio,
-		                 sizeof(thiz->stat_prio));
-
-		ui_todo_percent(thiz->stat_cnt,
-		                index + 1,
-		                todo_repo_count(thiz->stat_todos),
-		                sizeof(thiz->stat_cnt));
-
-		thiz->stat_index = index;
-	}
+	struct ui_field* const        flds = thiz->stat_flds;
+	struct ui_window const* const win = &thiz->stat_win;
 
 	ui_update_window_geometry(win, geometry);
 
@@ -44,19 +36,34 @@ void ui_render_status(struct ui_status*         thiz,
 	                                ui_window_width(win),
 	                                ut_array_count(thiz->stat_flds));
 
-	/* Move cursor to begining of status bar. */
-	ui_move_window_cursor(win, 0, 0);
+	ui_paint_status(thiz, flds, win);
+}
 
-	ui_render_string_field(&flds[STAT_CAL_FLD], win, thiz->stat_cal);
-	ui_render_string_field(&flds[STAT_CAT_FLD],
-	                       win,
-	                       dstr_charp(&thiz->stat_cat));
-	ui_render_string_field(&flds[STAT_PRIO_FLD], win, thiz->stat_prio);
-	ui_render_string_field(&flds[STAT_CNT_FLD], win, thiz->stat_cnt);
+__nonull(1) __leaf
+void ui_select_status(struct ui_status* thiz,
+                      unsigned int      index)
+{
+	ui_assert_status(thiz);
+
+	struct todo_repo const* const todos = thiz->stat_todos;
+	struct todo*                  todo;
+
+	todo = todo_repo_entry(todos, index);
+
+	thiz->stat_cal = ui_todo_calendar(todo);
+
+	ui_todo_categories(todo, &thiz->stat_cat);
+
+	ui_todo_priority(todo, thiz->stat_prio, sizeof(thiz->stat_prio));
+
+	ui_todo_percent(thiz->stat_cnt,
+	                index + 1,
+	                todo_repo_count(todos),
+	                sizeof(thiz->stat_cnt));
 }
 
 __nonull(1)
-void ui_load_status(struct ui_status* thiz)
+void ui_load_status(struct ui_status* thiz, unsigned int index)
 {
 	ui_assert_status(thiz);
 
@@ -80,12 +87,12 @@ void ui_load_status(struct ui_status* thiz)
 		ui_adjust_optimal_field_width(&flds[STAT_CAT_FLD],
 		                              dstr_len(&thiz->stat_cat));
 	}
+
+	ui_select_status(thiz, index);
 }
 
-__nonull(1, 2, 3)
-int ui_init_status(struct ui_status*         thiz,
-                   struct ui_geometry const* geometry,
-                   struct todo_repo const*   todos)
+__nonull(1, 2) __leaf
+int ui_init_status(struct ui_status* thiz, struct todo_repo const* todos)
 {
 	ut_assert(thiz);
 	ut_assert(todos);
@@ -99,7 +106,7 @@ int ui_init_status(struct ui_status*         thiz,
 		return err;
 
 	/* Create status bar window. */
-	err = ui_init_window(&thiz->stat_win, geometry);
+	err = ui_init_full_window(&thiz->stat_win);
 	if (err) {
 		dstr_fini(&thiz->stat_cat);
 		return err;
@@ -107,8 +114,6 @@ int ui_init_status(struct ui_status*         thiz,
 
 	ui_fetch_window_attrs(&thiz->stat_win, &attrs, &clr);
 	ui_setup_window_attrs(&thiz->stat_win, attrs | A_REVERSE, clr);
-
-	thiz->stat_index = UINT_MAX;
 
 	ui_init_variable_field(&thiz->stat_flds[STAT_CAL_FLD],
 	                       STAT_MIN_CAL_LEN);

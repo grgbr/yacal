@@ -78,9 +78,7 @@ static void ycl_resize(struct yacal* thiz)
 	                 &thiz->ycl_dgst_geom,
 	                 thiz->ycl_curr_todo);
 
-	ui_render_status(&thiz->ycl_stat,
-	                 &thiz->ycl_stat_geom,
-	                 thiz->ycl_curr_todo);
+	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
 	if (thiz->ycl_state == YACAL_FULL_STAT)
 		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
@@ -89,7 +87,9 @@ static void ycl_resize(struct yacal* thiz)
 static void ycl_select_todo(struct yacal* thiz, unsigned int index)
 {
 	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, index);
-	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom, index);
+
+	ui_select_status(&thiz->ycl_stat, index);
+	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
 	if (thiz->ycl_state == YACAL_FULL_STAT) {
 		ui_load_sheet(&thiz->ycl_sht, index);
@@ -197,7 +197,6 @@ static int ycl_process(struct yacal* thiz)
 	return 0;
 }
 
-
 static
 int ycl_init(struct yacal* thiz)
 {
@@ -223,9 +222,7 @@ int ycl_init(struct yacal* thiz)
 	if (err)
 		goto fini_ui;
 
-	err = ui_init_status(&thiz->ycl_stat,
-	                     &thiz->ycl_stat_geom,
-	                     &thiz->ycl_todos);
+	err = ui_init_status(&thiz->ycl_stat, &thiz->ycl_todos);
 	if (err)
 		goto fini_dgst;
 
@@ -238,10 +235,10 @@ int ycl_init(struct yacal* thiz)
 		goto fini_sht;
 
 	ui_load_digest(&thiz->ycl_dgst);
-	ui_load_status(&thiz->ycl_stat);
+	ui_load_status(&thiz->ycl_stat, 0);
 
 	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, 0);
-	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom, 0);
+	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
 	thiz->ycl_curr_todo = 0;
 
