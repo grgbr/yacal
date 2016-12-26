@@ -13,7 +13,6 @@ enum yacal_state {
 
 struct yacal {
 	enum yacal_state   ycl_state;
-	unsigned int       ycl_curr_todo;
 	struct todo_repo   ycl_todos;
 	struct ui_geometry ycl_dgst_geom;
 	struct ui_geometry ycl_stat_geom;
@@ -74,9 +73,7 @@ static void ycl_resize(struct yacal* thiz)
 {
 	ycl_resize_layout(thiz);
 
-	ui_render_digest(&thiz->ycl_dgst,
-	                 &thiz->ycl_dgst_geom,
-	                 thiz->ycl_curr_todo);
+	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom);
 
 	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
@@ -84,39 +81,19 @@ static void ycl_resize(struct yacal* thiz)
 		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
 }
 
-static void ycl_select_todo(struct yacal* thiz, unsigned int index)
+static void ycl_select_todo(struct yacal* thiz)
 {
-	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, index);
+	unsigned int select;
 
-	ui_select_status(&thiz->ycl_stat, index);
+	select = ui_digest_entry(&thiz->ycl_dgst);
+
+	ui_select_status(&thiz->ycl_stat, select);
 	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
 	if (thiz->ycl_state == YACAL_FULL_STAT) {
-		ui_load_sheet(&thiz->ycl_sht, index);
+		ui_load_sheet(&thiz->ycl_sht, select);
 		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
 	}
-
-	thiz->ycl_curr_todo = index;
-}
-
-static void ycl_select_next_todo(struct yacal* thiz)
-{
-	unsigned int const idx = thiz->ycl_curr_todo + 1;
-
-	if (idx >= todo_repo_count(&thiz->ycl_todos))
-		return;
-
-	ycl_select_todo(thiz, idx);
-}
-
-static void ycl_select_previous_todo(struct yacal* thiz)
-{
-	unsigned int const idx = thiz->ycl_curr_todo;
-
-	if (!idx)
-		return;
-
-	ycl_select_todo(thiz, idx - 1);
 }
 
 static void ycl_show(struct yacal const* thiz)
@@ -140,12 +117,14 @@ static int ycl_process(struct yacal* thiz)
 
 	case KEY_DOWN:
 	case 'j':
-		ycl_select_next_todo(thiz);
+		if(ui_scroll_digest_down(&thiz->ycl_dgst))
+			ycl_select_todo(thiz);
 		break;
 
 	case KEY_UP:
 	case 'k':
-		ycl_select_previous_todo(thiz);
+		if(ui_scroll_digest_up(&thiz->ycl_dgst))
+			ycl_select_todo(thiz);
 		break;
 
 	case KEY_ENTER:
@@ -153,7 +132,8 @@ static int ycl_process(struct yacal* thiz)
 		switch (thiz->ycl_state) {
 		case YACAL_DIGEST_STAT:
 			thiz->ycl_state = YACAL_FULL_STAT;
-			ui_load_sheet(&thiz->ycl_sht, thiz->ycl_curr_todo);
+			ui_load_sheet(&thiz->ycl_sht,
+			              ui_digest_entry(&thiz->ycl_dgst));
 			ycl_resize(thiz);
 			break;
 
@@ -213,12 +193,7 @@ int ycl_init(struct yacal* thiz)
 	if (err)
 		goto fini_todo;
 
-	thiz->ycl_state = YACAL_DIGEST_STAT;
-	ycl_resize_layout(thiz);
-
-	err = ui_init_digest(&thiz->ycl_dgst,
-	                     &thiz->ycl_dgst_geom,
-	                     &thiz->ycl_todos);
+	err = ui_init_digest(&thiz->ycl_dgst, &thiz->ycl_todos);
 	if (err)
 		goto fini_ui;
 
@@ -234,13 +209,14 @@ int ycl_init(struct yacal* thiz)
 	if (err)
 		goto fini_sht;
 
+	thiz->ycl_state = YACAL_DIGEST_STAT;
+	ycl_resize_layout(thiz);
+
 	ui_load_digest(&thiz->ycl_dgst);
 	ui_load_status(&thiz->ycl_stat, 0);
 
-	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom, 0);
+	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom);
 	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
-
-	thiz->ycl_curr_todo = 0;
 
 	ycl_show(thiz);
 

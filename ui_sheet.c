@@ -64,7 +64,6 @@ int ui_scroll_sheet_up(struct ui_sheet* thiz)
 	return 0;
 }
 
-
 int ui_scroll_sheet_down(struct ui_sheet* thiz)
 {
 	struct ui_window* const win = &thiz->sht_win;
