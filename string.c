@@ -215,6 +215,23 @@ size_t str_squeeze_blanks(char* restrict       dst,
 	return dst + cnt - start;
 }
 
+char* str_strip_blank(char* string)
+{
+	size_t len;
+	size_t blanks;
+
+	len = strlen(string);
+
+	blanks = str_count_leading_blank(string, len);
+	string += blanks;
+	len -= blanks;
+
+	len -= str_count_trailing_blank(string, len);
+	string[len] = '\0';
+
+	return string;
+}
+
 /******************************************************************************
  * Dynamically resizeable string
  ******************************************************************************/

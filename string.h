@@ -26,6 +26,8 @@ extern size_t str_eval_squeeze_blanks(char const*, size_t, size_t*)
               __nonull(1, 3) __nothrow __pure;
 extern size_t str_squeeze_blanks(char* restrict, char const* restrict, size_t)
               __nonull(1, 2) __nothrow;
+extern char*  str_strip_blank(char* string)
+              __nonull(1) __nothrow;
 
 /******************************************************************************
  * Dynamically resizeable string
