@@ -2,6 +2,7 @@
 #define _UI_DIGEST_H
 
 #include "ui.h"
+#include "scroller.h"
 
 struct todo_repo;
 
@@ -17,7 +18,7 @@ struct ui_digest {
 	attr_t                  dgst_attr;
 	short                   dgst_color;
 	struct ui_field         dgst_flds[DGST_NR_FLD];
-	struct ui_scroll_list   dgst_scrl;
+	struct scroller         dgst_scrl;
 	struct todo_repo const* dgst_todos;
 };
 

@@ -259,42 +259,4 @@ extern void ui_render_field(struct ui_field* thiz,
                             char const*,
                             ...) __nonull(1, 2, 3) __printf(3, 4);
 
-/******************************************************************************
- * Scrolling list handling.
- ******************************************************************************/
-
-struct ui_scroll_list {
-	unsigned int scrl_top;
-	unsigned int scrl_rows;
-	unsigned int scrl_cols;
-};
-
-static inline __nonull(1) __nothrow
-void ui_reset_scroll_list(struct ui_scroll_list* thiz)
-{
-	ut_assert(thiz);
-
-	memset(thiz, 0, sizeof(*thiz));
-}
-
-static inline __nonull(1, 2) __nothrow __pure
-bool ui_scroll_list_width_changed(struct ui_scroll_list const* thiz,
-                                  struct ui_geometry const*    geometry)
-{
-	return geometry->w != thiz->scrl_cols;
-}
-
-struct ui_scroll_list_refresh {
-	unsigned int scrl_top;
-	unsigned int scrl_row;
-	unsigned int scrl_cnt;
-};
-
-extern unsigned int ui_render_scroll_list(struct ui_scroll_list*,
-                                          unsigned int,
-                                          unsigned int,
-                                          struct ui_geometry const*,
-                                          struct ui_scroll_list_refresh*)
-                    __nonull(1, 4, 5) __nothrow __leaf;
-
 #endif

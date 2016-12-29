@@ -8,7 +8,7 @@ CFLAGS        := $(common-cflags) -O0 -g
 #CFLAGS        := $(common-cflags) -D_FORTIFY_SOURCE=2 -O2 -DNDEBUG
 
 objs := yacal.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o pager.o \
-	todo.o vdir.o vector.o string.o utils.o
+	scroller.o todo.o vdir.o vector.o string.o utils.o
 
 all: yacal uc_string uc_pager
 
