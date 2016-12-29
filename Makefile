@@ -36,6 +36,10 @@ clean:
 clobber:
 	$(RM) -r $(BUILDDIR)
 
+.PHONY: doc
+doc: | $(BUILDDIR)
+	doxygen
+
 .PHONY: dev
 dev: .vimrc | $(BUILDDIR)
 	ctags -f $(BUILDDIR)/tags -R
