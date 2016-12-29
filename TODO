@@ -1,0 +1,14 @@
+todo fields:
+* title
+* location
+* categories
+* calendar
+* priority
+* start / due date
+* status (in progress, completed, etc...)
+* reminder / repeat
+* description
+
+ui widgets related error handling
+rework fields
+command / message window support in progress
