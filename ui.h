@@ -137,6 +137,14 @@ void ui_print_window_string(struct ui_window const* thiz,
 	waddnstr(thiz->win_inst, string, (int)size);
 }
 
+static inline
+void ui_print_window_char(struct ui_window const* thiz, int c)
+{
+	ui_assert_window(thiz);
+
+	waddch(thiz->win_inst, c);
+}
+
 static inline __nonull(1)
 void ui_show_window(struct ui_window const* thiz)
 {
