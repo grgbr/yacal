@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include "todo.h"
 #include "ui.h"
 #include "ui_digest.h"
 #include "ui_status.h"
 #include "ui_sheet.h"
+#include "ui_console.h"
 
 enum yacal_state {
 	YACAL_DIGEST_STAT,
@@ -13,56 +15,72 @@ enum yacal_state {
 
 struct yacal {
 	enum yacal_state   ycl_state;
+	bool               ycl_cmd;
 	struct todo_repo   ycl_todos;
 	struct ui_geometry ycl_dgst_geom;
 	struct ui_geometry ycl_stat_geom;
 	struct ui_geometry ycl_sht_geom;
+	struct ui_geometry ycl_cons_geom;
 	struct ui_digest   ycl_dgst;
 	struct ui_status   ycl_stat;
 	struct ui_sheet    ycl_sht;
+	struct ui_console  ycl_cons;
 };
 
 static void ycl_resize_layout(struct yacal* thiz)
 {
 	int h;
 	int w;
-	int sht;
 
 	getmaxyx(stdscr, h, w);
-
-	sht = (h * 4) / 10;
 
 	switch (thiz->ycl_state) {
 	case YACAL_DIGEST_STAT:
 		thiz->ycl_dgst_geom.y = 0;
 		thiz->ycl_dgst_geom.x = 0;
-		thiz->ycl_dgst_geom.h = h - 1;
+		thiz->ycl_dgst_geom.h = h - 2;
 		thiz->ycl_dgst_geom.w = w;
 
-		thiz->ycl_stat_geom.y = h - 1;
+		thiz->ycl_stat_geom.y = h - 2;
 		thiz->ycl_stat_geom.x = 0;
 		thiz->ycl_stat_geom.h = 1;
 		thiz->ycl_stat_geom.w = w;
+
+		thiz->ycl_cons_geom.y = h - 1;
+		thiz->ycl_cons_geom.x = 0;
+		thiz->ycl_cons_geom.h = 1;
+		thiz->ycl_cons_geom.w = w;
 
 		break;
 
-	case YACAL_FULL_STAT:
+	case YACAL_FULL_STAT: {
+		int sht, dgst;
+		
+		dgst = ((h - 2) * 6) / 10;
+		sht = h - 2 - dgst;
+
 		thiz->ycl_dgst_geom.y = 0;
 		thiz->ycl_dgst_geom.x = 0;
-		thiz->ycl_dgst_geom.h = h - 1 - sht;
+		thiz->ycl_dgst_geom.h = dgst;
 		thiz->ycl_dgst_geom.w = w;
 
-		thiz->ycl_stat_geom.y = h - 1 - sht;
+		thiz->ycl_stat_geom.y = dgst;
 		thiz->ycl_stat_geom.x = 0;
 		thiz->ycl_stat_geom.h = 1;
 		thiz->ycl_stat_geom.w = w;
 
-		thiz->ycl_sht_geom.y = h - sht;
+		thiz->ycl_sht_geom.y = dgst + 1;
 		thiz->ycl_sht_geom.x = 0;
 		thiz->ycl_sht_geom.h = sht;
 		thiz->ycl_sht_geom.w = w;
 
+		thiz->ycl_cons_geom.y = h - 1;
+		thiz->ycl_cons_geom.x = 0;
+		thiz->ycl_cons_geom.h = 1;
+		thiz->ycl_cons_geom.w = w;
+
 		break;
+	}
 
 	default:
 		ut_assert(0);
@@ -79,6 +97,8 @@ static void ycl_resize(struct yacal* thiz)
 
 	if (thiz->ycl_state == YACAL_FULL_STAT)
 		ui_render_sheet(&thiz->ycl_sht, &thiz->ycl_sht_geom);
+
+	ui_render_console(&thiz->ycl_cons, &thiz->ycl_cons_geom);
 }
 
 static void ycl_select_todo(struct yacal* thiz)
@@ -106,18 +126,58 @@ static void ycl_show(struct yacal const* thiz)
 
 	if (thiz->ycl_state == YACAL_FULL_STAT)
 		ui_show_sheet(&thiz->ycl_sht);
+
+	ui_show_console(&thiz->ycl_cons);
+}
+
+static int ycl_process_input(struct yacal* thiz)
+{
+	int         c;
+	char const* cmd;
+
+	if (!thiz->ycl_cmd)
+		return getch();
+
+	c = ui_process_console_input(&thiz->ycl_cons, &cmd);
+	if (c > 0)
+		goto out;
+
+	if (c == -EAGAIN)
+		goto render;
+
+	if (c) {
+		ui_post_console_message(&thiz->ycl_cons,
+		                        "failed to parse command");
+		goto disable;
+	}
+
+	/* TODO: parse and execute command. */
+	ui_post_console_message(&thiz->ycl_cons, cmd);
+
+disable:
+	thiz->ycl_cmd = false;
+render:
+	ui_render_console(&thiz->ycl_cons, &thiz->ycl_cons_geom);
+out:
+	return c;
 }
 
 static int ycl_process(struct yacal* thiz)
 {
-	switch (getch()) {
+	int c;
+
+	c = ycl_process_input(thiz);
+	if (c <= 0)
+		goto show;
+
+	switch (c) {
 	case KEY_RESIZE:
 		ycl_resize(thiz);
 		break;
 
 	case KEY_DOWN:
 	case 'j':
-		if(ui_scroll_digest_down(&thiz->ycl_dgst))
+		if (ui_scroll_digest_down(&thiz->ycl_dgst))
 			ycl_select_todo(thiz);
 		break;
 
@@ -169,10 +229,16 @@ static int ycl_process(struct yacal* thiz)
 
 		break;
 
+	case UI_CONSOLE_PROMPT_CHAR:
+		thiz->ycl_cmd = true;
+		ui_enable_console_input(&thiz->ycl_cons);
+		break;
+
 	default:
 		return 0;
 	}
 
+show:
 	ycl_show(thiz);
 	return 0;
 }
@@ -205,11 +271,16 @@ int ycl_init(struct yacal* thiz)
 	if (err)
 		goto fini_stat;
 
-	err = todo_load_repo(&thiz->ycl_todos);
+	err = ui_init_console(&thiz->ycl_cons);
 	if (err)
 		goto fini_sht;
 
+	err = todo_load_repo(&thiz->ycl_todos);
+	if (err)
+		goto fini_cons;
+
 	thiz->ycl_state = YACAL_DIGEST_STAT;
+	thiz->ycl_cmd = false;
 	ycl_resize_layout(thiz);
 
 	ui_load_digest(&thiz->ycl_dgst);
@@ -218,10 +289,15 @@ int ycl_init(struct yacal* thiz)
 	ui_render_digest(&thiz->ycl_dgst, &thiz->ycl_dgst_geom);
 	ui_render_status(&thiz->ycl_stat, &thiz->ycl_stat_geom);
 
+	ui_post_console_message(&thiz->ycl_cons, "Welcome to Yacal");
+	ui_render_console(&thiz->ycl_cons, &thiz->ycl_cons_geom);
+
 	ycl_show(thiz);
 
 	return 0;
 
+fini_cons:
+	ui_fini_console(&thiz->ycl_cons);
 fini_sht:
 	ui_fini_sheet(&thiz->ycl_sht);
 fini_stat:
@@ -238,6 +314,7 @@ fini_todo:
 
 static void ycl_fini(struct yacal* thiz)
 {
+	ui_fini_console(&thiz->ycl_cons);
 	ui_fini_sheet(&thiz->ycl_sht);
 	ui_fini_status(&thiz->ycl_stat);
 	ui_fini_digest(&thiz->ycl_dgst);
