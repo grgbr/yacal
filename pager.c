@@ -450,7 +450,7 @@ int pg_feed_string(struct pager*         thiz,
 	ut_assert(render);
 
 	do {
-		ssize_t len;
+		ssize_t len = -EBADFD;
 
 		switch (thiz->pg_stat) {
 		case PG_INIT_STAT:
@@ -557,6 +557,17 @@ bool pg_dress(struct pager*         thiz,
 	thiz->pg_sz = row_length;
 
 	return false;
+}
+
+__nonull(1) __nothrow __pure
+unsigned int pg_visible_level(struct pager const* thiz,
+                              unsigned int        top_line,
+                              unsigned int        height)
+{
+	unsigned int const last = ut_min(top_line + height,
+	                                 pg_line_count(thiz));
+
+	return (last * 100) / pg_line_count(thiz);
 }
 
 __nonull(1) __nothrow

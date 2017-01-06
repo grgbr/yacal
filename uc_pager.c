@@ -283,7 +283,11 @@ START_TEST(uc_pager_nobreak_multi_atom_nl)
 	for (s = 0; s < UC_PAGER_LINE_NR; s += 2) {
 		char*  str;
 
-		asprintf(&str, "string %d\nstring %d", s, s + 1);
+		ck_assert_int_gt(asprintf(&str,
+		                           "string %d\nstring %d",
+		                           s,
+		                           s + 1),
+		                 0);
 
 		ck_assert_int_eq(pg_feed_line(&uc_pager, 0), 0);
 

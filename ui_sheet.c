@@ -44,6 +44,42 @@ int ui_render_sheet_value(char const* string, size_t length, void* data)
 	return 0;
 }
 
+static
+int ui_paint_sheet(struct ui_sheet*  thiz,
+                   struct ui_window* window,
+                   unsigned int      top_line,
+                   unsigned int      height)
+{
+
+	int          err;
+	unsigned int width;
+
+	ui_erase_window(window);
+
+	err = pg_paint(&thiz->sht_pg, top_line, height - 1, window);
+	if (err)
+		return err;
+
+	width = ui_window_width(window);
+
+	if (width >= 8) {
+		ui_move_window_cursor(window, height - 1, width - 8);
+		ui_render_field(&thiz->sht_lvl,
+				window,
+				"(%u%%)",
+				pg_visible_level(&thiz->sht_pg,
+				                 top_line,
+				                 height - 1));
+	}
+
+	ui_setup_line_attrs(window,
+	                    height - 1,
+	                    thiz->sht_attrs | A_REVERSE,
+	                    thiz->sht_clr);
+
+	return 0;
+}
+
 int ui_scroll_sheet_up(struct ui_sheet* thiz)
 {
 	unsigned int const      top = thiz->sht_top;
@@ -53,9 +89,7 @@ int ui_scroll_sheet_up(struct ui_sheet* thiz)
 	if (!top)
 		return 0;
 
-	ui_erase_window(win);
-
-	err = pg_paint(&thiz->sht_pg, top - 1, ui_window_height(win), win);
+	err = ui_paint_sheet(thiz, win, top - 1, ui_window_height(win));
 	if (err)
 		return err;
 
@@ -72,12 +106,10 @@ int ui_scroll_sheet_down(struct ui_sheet* thiz)
 	unsigned int            height = ui_window_height(win);
 	int                     err;
 	
-	if ((top + height) >= pg_line_count(pg))
+	if ((top + height - 1) >= pg_line_count(pg))
 		return 0;
 
-	ui_erase_window(win);
-
-	err = pg_paint(pg, top + 1, height, win);
+	err = ui_paint_sheet(thiz, win, top + 1, height);
 	if (err)
 		return err;
 
@@ -154,7 +186,9 @@ int ui_render_sheet_pager(struct ui_sheet* thiz,
 		                     ui_render_sheet_field);
 		if (err)
 			return err;
-		err = pg_feed_string(pager, thiz->sht_loc, ui_render_sheet_value);
+		err = pg_feed_string(pager,
+		                     thiz->sht_loc,
+		                     ui_render_sheet_value);
 		if (err)
 			return err;
 	}
@@ -189,9 +223,7 @@ int ui_render_sheet(struct ui_sheet* thiz, struct ui_geometry const* geometry)
 	if (err)
 		return err;
 
-	ui_erase_window(win);
-
-	return pg_paint(pg, thiz->sht_top, geometry->h, win);
+	return ui_paint_sheet(thiz, win, thiz->sht_top, geometry->h);
 }
 
 __nonull(1)
@@ -231,7 +263,7 @@ int ui_init_sheet(struct ui_sheet*  thiz,
 	ut_assert(thiz);
 	ut_assert(todos);
 
-	int err;
+	int    err;
 
 	err = pg_init(&thiz->sht_pg);
 	if (err)
@@ -245,6 +277,11 @@ int ui_init_sheet(struct ui_sheet*  thiz,
 	err = ui_init_full_window(&thiz->sht_win);
 	if (err)
 		goto cats;
+
+	ui_init_fixed_field(&thiz->sht_lvl, 6);
+	ui_adjust_available_field_width(&thiz->sht_lvl, 8, 1);
+
+	ui_fetch_window_attrs(&thiz->sht_win, &thiz->sht_attrs, &thiz->sht_clr);
 
 	thiz->sht_top = 0;
 	thiz->sht_todos = todos;
@@ -264,6 +301,7 @@ void ui_fini_sheet(struct ui_sheet* thiz)
 {
 	ui_assert_sheet(thiz);
 
+	ui_fini_field(&thiz->sht_lvl);
 	ui_fini_window(&thiz->sht_win);
 	dstr_fini(&thiz->sht_cats);
 	pg_fini(&thiz->sht_pg);

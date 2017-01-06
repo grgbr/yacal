@@ -16,6 +16,9 @@ struct ui_sheet {
 	char const*        sht_cal;
 	char const*        sht_loc;
 	char const*        sht_desc;
+	struct ui_field    sht_lvl;
+	attr_t             sht_attrs;
+	short              sht_clr;
 	struct ui_window   sht_win;
 	struct todo_repo*  sht_todos;
 };

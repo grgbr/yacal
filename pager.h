@@ -47,19 +47,26 @@ size_t pg_line_count(struct pager const* thiz)
 	return vect_count(&thiz->pg_lns);
 }
 
-extern int  pg_paint(struct pager*, unsigned int, unsigned int, void*)
-            __nonull(1);
-extern int  pg_feed_string(struct pager*, char const*, pager_render_atom_fn*)
-            __nonull(1, 2, 3) __nothrow;
-extern int  pg_feed_line(struct pager*, unsigned int)
-            __nonull(1) __nothrow;
-extern bool pg_dress(struct pager*, size_t, pager_render_line_fn*)
-            __nonull(1, 3) __nothrow;
-extern void pg_clear(struct pager*)
-            __nonull(1) __nothrow;
-extern int  pg_init(struct pager*)
-            __nonull(1) __nothrow;
-extern void pg_fini(struct pager*)
-            __nonull(1) __nothrow;
+
+extern int          pg_paint(struct pager*, unsigned int, unsigned int, void*)
+                    __nonull(1);
+extern int          pg_feed_string(struct pager*,
+                                   char const*,
+                                   pager_render_atom_fn*)
+                    __nonull(1, 2, 3) __nothrow;
+extern int          pg_feed_line(struct pager*, unsigned int)
+                    __nonull(1) __nothrow;
+extern bool         pg_dress(struct pager*, size_t, pager_render_line_fn*)
+                    __nonull(1, 3) __nothrow;
+extern void         pg_clear(struct pager*)
+                    __nonull(1) __nothrow;
+extern unsigned int pg_visible_level(struct pager const*,
+                                     unsigned int,
+                                     unsigned int)
+                    __nonull(1) __nothrow __pure;
+extern int          pg_init(struct pager*)
+                    __nonull(1) __nothrow;
+extern void         pg_fini(struct pager*)
+                    __nonull(1) __nothrow;
 
 #endif
