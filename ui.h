@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <errno.h>
 #include <ncurses.h>
 #include "utils.h"
 
@@ -145,6 +146,17 @@ void ui_print_window_char(struct ui_window const* thiz, int c)
 	waddch(thiz->win_inst, c);
 }
 
+static inline
+int ui_fetch_window_char(struct ui_window const* thiz)
+{
+	int c = wgetch(thiz->win_inst);
+
+	if (c == ERR)
+		return -errno;
+
+	return c;
+}
+
 static inline __nonull(1)
 void ui_show_window(struct ui_window const* thiz)
 {
@@ -161,6 +173,12 @@ void ui_fini_window(struct ui_window const* thiz)
 	delwin(thiz->win_inst);
 }
 
+extern void ui_print_window(struct ui_window const*, char const*, ...)
+            __nonull(1, 2) __printf(2, 3);
+
+extern void ui_clear_line(struct ui_window const*, unsigned int)
+            __nonull(1);
+
 extern bool ui_window_geometry_changed(struct ui_window const*,
                                        struct ui_geometry const*)
             __nonull(1, 2) __nothrow __leaf __pure;
@@ -173,6 +191,7 @@ extern int  ui_init_window(struct ui_window*,
                            struct ui_geometry const*) __nonull(1, 2) __leaf;
 
 extern int  ui_init_full_window(struct ui_window*) __nonull(1) __leaf;
+
 
 /******************************************************************************
  * Field handling.

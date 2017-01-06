@@ -51,6 +51,26 @@ void ui_fini(void)
  * Window handling.
  ******************************************************************************/
 
+__nonull(1, 2) __printf(2, 3)
+void ui_print_window(struct ui_window const* thiz, char const* format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vwprintw(thiz->win_inst, format, args);
+	va_end(args);
+}
+
+__nonull(1)
+void ui_clear_line(struct ui_window const* thiz, unsigned int line_no)
+{
+	ui_assert_window(thiz);
+
+	ui_move_window_cursor(thiz, line_no, 0);
+
+	wclrtoeol(thiz->win_inst);
+}
+
 __nonull(1, 2) __nothrow __leaf __pure
 bool ui_window_geometry_changed(struct ui_window const*   thiz,
                                 struct ui_geometry const* geometry)
