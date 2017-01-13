@@ -1,8 +1,6 @@
 #include <errno.h>
 #include "ui.h"
 
-static int ui_curs_stat;
-
 __leaf
 int ui_init(void)
 {
@@ -21,8 +19,7 @@ int ui_init(void)
 		goto end;
 
 	/* Make cursor invisible. */
-	ui_curs_stat = curs_set(0);
-	if (ui_curs_stat == ERR)
+	if (curs_set(0) == ERR)
 		goto end;
 
 	/* Enable support for special function keys (arrows, etc...). */
@@ -41,9 +38,6 @@ end:
 __leaf
 void ui_fini(void)
 {
-	curs_set(ui_curs_stat);
-	echo();
-	nocbreak();
 	endwin();
 }
 
