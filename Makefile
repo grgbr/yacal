@@ -10,7 +10,7 @@ CFLAGS        := $(common-cflags) -O0 -g
 objs := yacal.o ui_console.o ui_sheet.o ui_digest.o ui_status.o ui_todo.o ui.o \
 	pager.o scroller.o todo.o vdir.o vector.o string.o utils.o
 
-all: $(addprefix $(BUILDDIR)/,yacal uc_string uc_pager)
+all: $(addprefix $(BUILDDIR)/,yacal uc_string uc_pager curs_getkey)
 
 $(BUILDDIR)/yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
@@ -24,6 +24,10 @@ $(BUILDDIR)/uc_pager: $(addprefix $(BUILDDIR)/, uc_pager.o pager.o string.o \
                         vector.o)
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
 		$(filter %.o,$^) -lcheck -lpthread -lrt -lm
+
+$(BUILDDIR)/curs_getkey: $(addprefix $(BUILDDIR)/, curs_getkey.o)
+	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
+		$(filter %.o,$^) -lncursesw
 
 $(BUILDDIR)/%.o: %.c Makefile | $(BUILDDIR)
 	$(CC) -I$(INCLUDES) -MD $(CFLAGS) -o $@ -c $<
