@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <locale.h>
 #include <errno.h>
 #include "todo.h"
 #include "ui.h"
@@ -328,6 +329,8 @@ int main(/*int argc, const char* argv[]*/)
 	struct yacal ctrl;
 	int          err;
 	int          ret = EXIT_FAILURE;
+
+	setlocale(LC_ALL, "");
 
 	err = ycl_init(&ctrl);
 	if (err)

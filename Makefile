@@ -14,7 +14,7 @@ all: $(addprefix $(BUILDDIR)/,yacal uc_string uc_pager curs_getkey)
 
 $(BUILDDIR)/yacal: $(addprefix $(BUILDDIR)/, $(objs))
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
-		$(filter %.o,$^) -lical -licalss -lncurses -lreadline
+		$(filter %.o,$^) -lical -licalss -lncursesw -lreadline
 
 $(BUILDDIR)/uc_string: $(addprefix $(BUILDDIR)/, uc_string.o string.o vector.o)
 	$(CC) -I$(INCLUDES) -L$(LIBS) -MD $(CFLAGS) -o $@ \
